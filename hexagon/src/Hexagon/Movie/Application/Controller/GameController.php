@@ -7,14 +7,24 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Swagger\Annotations as SWG;
-use Nelmio\ApiDocBundle\Annotation\Security;
 use Nelmio\ApiDocBundle\Annotation\Model;
+use Predis\ClientInterface;
 
 /**
  * @Route("", name="api_movie_game_")
  */
 class GameController extends AbstractController
 {
+    /**
+     * @var ClientInterface
+     */
+    private $redis;
+
+    public function __construct(ClientInterface $sncRedisDefault)
+    {
+        $this->redis = $sncRedisDefault;
+    }
+
     /**
      * @Route("/api/movie/game/play", name="question", methods={"GET"})
      * @SWG\Tag(name="Movie")
@@ -25,7 +35,8 @@ class GameController extends AbstractController
      */
     public function question()
     {
-        return new JsonResponse('toto', 200);
+        $this->redis->set('tutu', 'titi');
+        return new JsonResponse($this->redis->get('tutu'), 200);
     }
 
     /**

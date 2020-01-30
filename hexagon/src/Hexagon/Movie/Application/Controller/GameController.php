@@ -2,15 +2,16 @@
 
 namespace Hexagon\Movie\Application\Controller;
 
-use Hexagon\Movie\Domain\Themoviedb\Populator\PopulatorCollection;
-use Hexagon\Movie\Domain\Themoviedb\Populator\QuestionPopulator;
+use Hexagon\Movie\Domain\Game\GameService;
 use Hexagon\Movie\UiApi\Resource\QuestionResource;
+use JMS\Serializer\Serializer;
+use JMS\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Swagger\Annotations as SWG;
 use Nelmio\ApiDocBundle\Annotation\Model;
-use Predis\ClientInterface;
 use Throwable;
 
 /**
@@ -19,29 +20,29 @@ use Throwable;
 class GameController extends AbstractController
 {
     /**
-     * @var ClientInterface
+     * @var GameService
      */
-    private $redis;
+    private $gameService;
 
     /**
-     * @var QuestionPopulator
+     * @var Serializer
      */
-    private $questionPopulator;
+    private $serializer;
 
     /**
      * GameController constructor.
-     * @param ClientInterface $sncRedisDefault
-     * @param QuestionPopulator $questionPopulator
+     * @param GameService $gameService
+     * @param SerializerInterface $serializer
      */
-    public function __construct(ClientInterface $sncRedisDefault, QuestionPopulator $questionPopulator)
+    public function __construct(GameService $gameService, SerializerInterface $serializer)
     {
-        $this->redis = $sncRedisDefault;
-        $this->questionPopulator = $questionPopulator;
+        $this->gameService = $gameService;
+        $this->serializer = $serializer;
     }
 
     /**
      * @Route("/api/movie/game/play", name="question", methods={"GET"})
-     * @SWG\Tag(name="Movie")
+     * @SWG\Tag(name="Game")
      * @SWG\Get(
      *   summary="Get question about movie",
      *   @SWG\Response(response=200, description="Returns question", @Model(type=QuestionResource::class))
@@ -49,13 +50,13 @@ class GameController extends AbstractController
      */
     public function question()
     {
-        $this->redis->set('tutu', 'titi');
-        return new JsonResponse($this->redis->get('tutu'), 200);
+        $question = QuestionResource::fromObject($this->gameService->getQuestion());
+        return new Response($this->serializer->serialize($question, 'json'), 200);
     }
 
     /**
      * @Route("/api/movie/game/play", name="answer", methods={"POST"})
-     * @SWG\Tag(name="Movie")
+     * @SWG\Tag(name="Game")
      * @SWG\Post(
      *   summary="Answer to the question",
      *   @SWG\Response(response=204, description="No response")
@@ -67,17 +68,17 @@ class GameController extends AbstractController
     }
 
     /**
-     * @Route("/api/movie/game/populate", name="question", methods={"GET"})
-     * @SWG\Tag(name="Movie")
+     * @Route("/api/movie/game/populate/{page}", name="populate", methods={"GET"})
+     * @SWG\Tag(name="Game")
      * @SWG\Get(
-     *   summary="Get question about movie",
-     *   @SWG\Response(response=200, description="Returns question", @Model(type=QuestionResource::class))
+     *   summary="Call this to populate questions",
+     *   @SWG\Response(response=200, description="No response")
      * )
      */
-    public function populate()
+    public function populate(int $page)
     {
         try {
-            $this->questionPopulator->populate();
+            $this->gameService->populate($page);
         } catch (Throwable $e) {
             return new JsonResponse($e->getMessage(), 500);
         }

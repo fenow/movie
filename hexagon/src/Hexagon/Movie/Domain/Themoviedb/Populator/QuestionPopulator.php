@@ -2,12 +2,13 @@
 
 namespace Hexagon\Movie\Domain\Themoviedb\Populator;
 
+use Hexagon\Movie\Domain\Game\Model\Question;
 use Hexagon\Movie\Domain\Themoviedb\Api\Movie\CreditApi;
 use Hexagon\Movie\Domain\Themoviedb\Api\Movie\PopularApi as PopularMovie;
 use Hexagon\Movie\Domain\Themoviedb\Api\Person\PopularApi as PopularPerson;
 use Hexagon\Movie\Domain\Themoviedb\Model\Movie;
 use Hexagon\Movie\Domain\Themoviedb\Model\Person;
-use Hexagon\Movie\Domain\Themoviedb\Model\Question;
+use Hexagon\Movie\Infrastructure\QuestionRepository;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
@@ -35,6 +36,11 @@ class QuestionPopulator
     private $popularMovie;
 
     /**
+     * @var QuestionRepository
+     */
+    private $questionRepository;
+
+    /**
      * @var Person[]
      */
     private $persons = [];
@@ -49,12 +55,14 @@ class QuestionPopulator
      * @param PopularMovie $popularMovie
      * @param CreditApi $creditApi
      * @param PopularPerson $popularPerson
+     * @param QuestionRepository $questionRepository
      */
-    public function __construct(PopularMovie $popularMovie, CreditApi $creditApi, PopularPerson $popularPerson)
+    public function __construct(PopularMovie $popularMovie, CreditApi $creditApi, PopularPerson $popularPerson, QuestionRepository $questionRepository)
     {
         $this->creditApi = $creditApi;
         $this->popularPerson = $popularPerson;
         $this->popularMovie = $popularMovie;
+        $this->questionRepository = $questionRepository;
     }
 
     /**
@@ -69,7 +77,7 @@ class QuestionPopulator
     {
         $this->getPersons($page);
         $this->getMovies($page);
-        $questions = $this->setQuestions();
+        $this->setQuestions();
     }
 
     /**
@@ -123,33 +131,49 @@ class QuestionPopulator
         }
     }
 
-    private function setQuestions(): array
+    /**
+     *
+     */
+    private function setQuestions()
     {
-        $questions = [];
         $currentMovieCounter = 0;
 
         foreach ($this->movies as $movie) {
             if(true === (bool) ($currentMovieCounter % 2)) {
-                $questions[] = $this->getTrueQuestion($movie);
+                $question = $this->getTrueQuestion($movie);
             } else {
-                $questions[] = $this->getFalseQuestion($movie);
+                $question = $this->getFalseQuestion($movie);
             }
 
+            $this->questionRepository->add($question);
             $currentMovieCounter++;
         }
-
-        return $questions;
     }
 
+    /**
+     * @param Movie $movie
+     * @return Question
+     */
     private function getTrueQuestion(Movie $movie): Question
     {
         $persons = $movie->getPersons();
         $max = count($persons) - 1;
         $randomizedPerson = $persons[rand(0, $max)];
 
-        return new Question($movie->getId(), true, $movie, $randomizedPerson);
+        return new Question(
+            $movie->getId(),
+            true,
+            $movie->getName(),
+            $movie->getPoster(),
+            $randomizedPerson->getName(),
+            $randomizedPerson->getAvatar()
+        );
     }
 
+    /**
+     * @param Movie $movie
+     * @return Question
+     */
     private function getFalseQuestion(Movie $movie): Question
     {
         $answer = false;
@@ -163,6 +187,13 @@ class QuestionPopulator
             }
         }
 
-        return new Question($movie->getId(), $answer, $movie, $randomizedPerson);
+        return new Question(
+            $movie->getId(),
+            $answer,
+            $movie->getName(),
+            $movie->getPoster(),
+            $randomizedPerson->getName(),
+            $randomizedPerson->getAvatar()
+        );
     }
 }

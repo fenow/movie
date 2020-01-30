@@ -2,6 +2,7 @@
 
 namespace Hexagon\Movie\UiApi\Resource;
 
+use Hexagon\Movie\Domain\Game\Model\Question;
 use JMS\Serializer\Annotation as Serializer;
 use stdClass;
 use Swagger\Annotations as SWG;
@@ -13,7 +14,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * @SWG\Schema(
  *     description="Question model",
  *     title="Question",
- *     required={"name"},
+ *     required={"movieTitle"},
  *     @SWG\Xml(
  *         name="question"
  *     )
@@ -22,36 +23,39 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 class QuestionResource
 {
     /**
-     * @SWG\Property(type="integer", description="Job's begin ID", example=2, readOnly=true)
+     * @SWG\Property(type="string", description="Question id", example=2, readOnly=true)
      */
     public $id;
 
     /**
-     * @SWG\Property(type="string", description="Name", example="toto")
+     * @SWG\Property(type="string", description="Movie title", example="Le mans 66")
      */
-    public $name;
+    public $movieTitle;
 
     /**
-     * @var UrlGeneratorInterface
-     * @Serializer\Exclude
+     * @SWG\Property(type="string", description="Movie poster", example="https://image.tmdb.org/t/p/w500//8yyRujXGSNCa3yrM3qoLZXUW3WY.jpg")
      */
-    private $urlGenerator;
+    public $moviePoster;
 
     /**
-     * SectorResource constructor.
-     * @param UrlGeneratorInterface $urlGenerator
+     * @SWG\Property(type="string", description="Actor name", example="Sylvester Stallone")
      */
-    public function __construct(UrlGeneratorInterface $urlGenerator)
-    {
-        $this->urlGenerator = $urlGenerator;
-    }
+    public $actorName;
 
-    public static function fromObject(stdClass $object, UrlGeneratorInterface $urlGenerator)
-    {
-        $self = new static($urlGenerator);
+    /**
+     * @SWG\Property(type="string", description="Actor avatar", example="https://image.tmdb.org/t/p/w500//gnmwOa46C2TP35N7ARSzboTdx2u.jpg")
+     */
+    public $actorAvatar;
 
-        $self->id = $object->id ?? null;
-        $self->name = 'toto';
+    public static function fromObject(Question $question)
+    {
+        $self = new static();
+
+        $self->id = $question->getId();
+        $self->movieTitle = $question->getMovieTitle();
+        $self->moviePoster = $question->getMoviePoster();
+        $self->actorName = $question->getActorName();
+        $self->actorAvatar = $question->getActorAvatar();
 
         return $self;
     }

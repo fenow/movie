@@ -27,7 +27,7 @@ Now, you have a PHP server running on `http://localhost:8000/`
 **Frontend part**
 ```
 cd ../front && yarn
-symfony serve
+yarn start
 ```
 
 Now, you have a node server running on `http://localhost:3000/`

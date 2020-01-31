@@ -10,6 +10,7 @@ class App extends React.Component {
 
     this.startGame = this.startGame.bind(this);
     this.gameOver = this.gameOver.bind(this);
+    this.incrScore = this.incrScore.bind(this);
 
     this.state = {
       begin : false,
@@ -20,7 +21,8 @@ class App extends React.Component {
 
   startGame() {
     this.setState(state => ({
-      begin: true
+      begin: true,
+      score: 0
     }));
   }
 
@@ -31,13 +33,19 @@ class App extends React.Component {
     }));
   }
 
+  incrScore() {
+    this.setState(state => ({
+      score: state.score + 1
+    }));
+  }
+
   render() {
     const isBegan = this.state.begin;
 
     return (
       <Container className="App">
         {isBegan ? (
-          <Game over={this.gameOver} />
+          <Game gameOver={this.gameOver} incrScore={this.incrScore} />
         ) : (
           <Home start={this.startGame} lose={this.state.lose} score={this.state.score} />
         )}

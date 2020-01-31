@@ -4,6 +4,7 @@ namespace Hexagon\Movie\Infrastructure;
 
 use Hexagon\Movie\Domain\Game\Model\Question;
 use Predis\ClientInterface;
+use Symfony\Component\HttpFoundation\File\Exception\NoFileException;
 
 /**
  * Class QuestionRepository
@@ -11,6 +12,9 @@ use Predis\ClientInterface;
  */
 class QuestionRepository
 {
+    /**
+     * @var array
+     */
     private const FILEDS = [
         'id',
         'answer',
@@ -39,6 +43,9 @@ class QuestionRepository
         $this->redis = $sncRedisDefault;
     }
 
+    /**
+     * @param Question $question
+     */
     public function add(Question $question)
     {
         $key = sprintf('%s%s', self::PREFIX, $question->getId());
@@ -82,9 +89,31 @@ class QuestionRepository
         );
     }
 
-    public function consume(Question $question): bool
+    /**
+     * @param string $questionId
+     * @param bool $answer
+     * @return bool
+     */
+    public function isCorrect(string $questionId, bool $answer): bool
     {
-        $key = sprintf('%s%s', self::PREFIX, $question->getId());
+        $key = sprintf('%s%s', self::PREFIX, $questionId);
+        $result = $this->redis->hget($key, 'answer');
+
+        if(null === $result) {
+            throw new NoFileException('Question not exist');
+        }
+
+        return (bool) $result === $answer;
+    }
+
+    /**
+     * @param string $questionId
+     * @return bool
+     */
+    public function consume(string $questionId): bool
+    {
+        $key = sprintf('%s%s', self::PREFIX, $questionId);
         $this->redis->del([$key]);
+        return true;
     }
 }

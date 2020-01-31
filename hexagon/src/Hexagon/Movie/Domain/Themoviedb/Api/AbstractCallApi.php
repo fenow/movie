@@ -63,7 +63,7 @@ abstract class AbstractCallApi
     /**
      * @param array $query
      *
-     * @return string
+     * @return stdClass
      * @throws ClientExceptionInterface
      * @throws RedirectionExceptionInterface
      * @throws ServerExceptionInterface

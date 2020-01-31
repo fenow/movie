@@ -8,6 +8,7 @@ use Hexagon\Movie\Domain\Themoviedb\Api\Movie\PopularApi as PopularMovie;
 use Hexagon\Movie\Domain\Themoviedb\Api\Person\PopularApi as PopularPerson;
 use Hexagon\Movie\Domain\Themoviedb\Model\Movie;
 use Hexagon\Movie\Domain\Themoviedb\Model\Person;
+use Hexagon\Movie\Infrastructure\GameRepository;
 use Hexagon\Movie\Infrastructure\QuestionRepository;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -51,33 +52,42 @@ class QuestionPopulator
     private $movies = [];
 
     /**
+     * @var GameRepository
+     */
+    private $gameRepository;
+
+    /**
      * MoviePopulator constructor.
      * @param PopularMovie $popularMovie
      * @param CreditApi $creditApi
      * @param PopularPerson $popularPerson
      * @param QuestionRepository $questionRepository
+     * @param GameRepository $gameRepository
      */
-    public function __construct(PopularMovie $popularMovie, CreditApi $creditApi, PopularPerson $popularPerson, QuestionRepository $questionRepository)
+    public function __construct(PopularMovie $popularMovie, CreditApi $creditApi, PopularPerson $popularPerson, QuestionRepository $questionRepository, GameRepository $gameRepository)
     {
         $this->creditApi = $creditApi;
         $this->popularPerson = $popularPerson;
         $this->popularMovie = $popularMovie;
         $this->questionRepository = $questionRepository;
+        $this->gameRepository = $gameRepository;
     }
 
     /**
-     * @param int $page
-     *
      * @throws ClientExceptionInterface
      * @throws RedirectionExceptionInterface
      * @throws ServerExceptionInterface
      * @throws TransportExceptionInterface
      */
-    public function populate(int $page = 1)
+    public function populate()
     {
+        $page = $this->gameRepository->getPage();
+
         $this->getPersons($page);
         $this->getMovies($page);
         $this->setQuestions();
+
+        $this->gameRepository->incrPage();
     }
 
     /**

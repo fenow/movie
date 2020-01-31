@@ -3,10 +3,12 @@
 namespace Hexagon\Movie\Application\Controller;
 
 use Hexagon\Movie\Domain\Game\GameService;
+use Hexagon\Movie\UiApi\Resource\AnswerResource;
 use Hexagon\Movie\UiApi\Resource\QuestionResource;
 use JMS\Serializer\Serializer;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -59,30 +61,18 @@ class GameController extends AbstractController
      * @SWG\Tag(name="Game")
      * @SWG\Post(
      *   summary="Answer to the question",
-     *   @SWG\Response(response=204, description="No response")
+     *   @SWG\Response(response=200, description="Is user answer correctly to the question?", @Model(type=AnswerResource::class))
      * )
      */
-    public function answer()
+    public function answer(Request $request)
     {
-        return new JsonResponse('toto', 204);
-    }
+        $json = json_decode($request->getContent());
 
-    /**
-     * @Route("/api/movie/game/populate/{page}", name="populate", methods={"GET"})
-     * @SWG\Tag(name="Game")
-     * @SWG\Get(
-     *   summary="Call this to populate questions",
-     *   @SWG\Response(response=200, description="No response")
-     * )
-     */
-    public function populate(int $page)
-    {
-        try {
-            $this->gameService->populate($page);
-        } catch (Throwable $e) {
-            return new JsonResponse($e->getMessage(), 500);
+        if(isset($json->answer) && isset($json->questionId)) {
+            $answer = AnswerResource::fromObject($this->gameService->isCorrect($json->questionId, $json->answer));
+            return new Response($this->serializer->serialize($answer, 'json'), 200);
         }
 
-        return new JsonResponse();
+        return new Response(null, 404);
     }
 }

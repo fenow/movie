@@ -47,6 +47,10 @@ class QuestionResource
      */
     public $actorAvatar;
 
+    /**
+     * @param Question $question
+     * @return static
+     */
     public static function fromObject(Question $question)
     {
         $self = new static();

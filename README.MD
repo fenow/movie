@@ -1,4 +1,4 @@
-# Da movie Game
+# Test project using Symfony/React and Redis
 
 ## Install
 **Run redis container**
